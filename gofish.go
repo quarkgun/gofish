@@ -5,22 +5,23 @@ import (
 	"math/rand"
 	"time"
 	"strings"
+	"sync"
 )
 
 var SUITES = [4]string{"Hearts", "Spades", "Diamonds", "Clubs"}
 var VALUES = [13]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K", "A"}
 
 var playerHand, cpuHand Hand
-var playerScore, cpuScore int = 0,0
+var playerScore, cpuScore int = 0, 0
 var deck Deck
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	fmt.Println("Go Fish!")
 
-	deck = *NewDeck()
-	playerHand = *NewHand()
-	cpuHand = *NewHand()
+	deck = *NewDeck("deck")
+	playerHand = *NewHand("playerHand")
+	cpuHand = *NewHand("cpuHand")
 
 	fmt.Println("Dealing...")
 	deal()
@@ -33,7 +34,6 @@ func main() {
 		fmt.Printf("Scores: Player[%v] CPU[%v]\n", playerScore, cpuScore)
 		fmt.Printf("Your Hand: %v\n", playerHand.size())
 		fmt.Println(playerHand)
-		fmt.Println(cpuHand)
 		if playerTurn {
 			fmt.Print("Choose a card: ")
 			fmt.Scanln(&input)
@@ -42,10 +42,10 @@ func main() {
 				quit = true
 				break
 			} else {
-				fmt.Printf("Do you have a %v?", input)
+				fmt.Printf("Do you have a %v?\n", input)
 				time.Sleep(time.Second * 1)
 				if cpuHand.hasCard(input) {
-					fmt.Println("Yep")
+					fmt.Println("Yep!")
 					playerHand.removeAllCardsWithValue(input)
 					cpuHand.removeAllCardsWithValue(input)
 					playerScore++
@@ -60,11 +60,11 @@ func main() {
 		} else {
 			fmt.Println("CPU turn...")
 			val := cpuHand.randomCard().value
-			fmt.Printf("Do you have a %v?", val)
+			fmt.Printf("Do you have a %v?\n", val)
 			time.Sleep(time.Second * 1)
 
 			if playerHand.hasCard(val) {
-				fmt.Println("Yep")
+				fmt.Println("Yep!")
 				playerHand.removeAllCardsWithValue(input)
 				cpuHand.removeAllCardsWithValue(input)
 				cpuScore++
@@ -86,11 +86,11 @@ func deal() {
 }
 
 func (this *Deck) initDeck() {
-	this.cards = make(map[string][]string)
+	this.cards = nil
 
 	for _, s := range SUITES {
 		for _, val := range VALUES {
-			this.cards[val] = append(this.cards[val], s)
+			this.cards = append(this.cards, Card{val, s})
 		}
 	}
 }
@@ -101,30 +101,33 @@ type Card struct {
 }
 
 type Deck struct {
-	cards map[string][]string
+	name  string
+	cards []Card
+	mux   sync.Mutex
 }
 
-func NewHand() *Hand {
+func NewHand(name string) *Hand {
 	hand := new(Hand)
-	hand.cards = make(map[string][]string)
+	hand.cards = nil
+	hand.name = name
 	return hand
 }
 
-func NewDeck() *Deck {
+func NewDeck(name string) *Deck {
 	deck := new(Deck)
 	deck.initDeck()
+	deck.name = name
 	return deck
 }
 
 func (this *Deck) take() Card {
-	card := this.randomCard()
-	this.removeCard(card)
-	fmt.Println("Taking card", card)
+	card := this.removeRandomCard()
 	return card
 }
 
 func (this *Deck) add(card Card) {
-	this.cards[card.value] = append(this.cards[card.value], card.suite)
+	this.print("Adding card", card)
+	this.cards = append(this.cards, card)
 }
 
 func (this *Deck) size() int {
@@ -132,49 +135,51 @@ func (this *Deck) size() int {
 }
 
 func (this *Deck) randomCard() Card {
-//	return this.cards[rand.Intn(len(this.cards))]
-	value := randMapKey(this.cards)
-	suites := this.cards[value]
-
-	if len(suites) > 0 {
-		suite := randListVal(suites)
-		return Card{value:value, suite:suite}
-	}
-	panic("Tried to get an invalid card")
-}
-
-func randListVal(list []string) string {
-	return list[rand.Intn(len(list))]
-}
-
-func randMapKey(m map[string][]string) string {
-	i := rand.Intn(len(m))
-	for k := range m {
-		if i == 0 {
-			return k
-		}
-		i--
-	}
-	panic("never")
+	return this.cards[rand.Intn(len(this.cards))]
 }
 
 func (this *Deck) removeAllCardsWithValue(value string) {
-	delete(this.cards, value)
-}
-
-func (this *Deck) removeCard(card Card) {
-	values := this.cards[card.value]
-	for i, s := range values {
-		if s == card.suite {
-			deleteElementAt(values, i)
+	count := 0
+	for i := 0; i < len(this.cards); i++ {
+		c := this.cards[i]
+		if c.value == value {
+			this.removeCardAtIndex(i)
+			count++
 		}
 	}
+	this.print("Removed ", count, "cards with value", value)
+
 }
 
-func deleteElementAt(slice []string, index int) {
-	slice[index] = slice[len(slice)-1] // Copy lslicest element to index i.
-	slice[len(slice)-1] = ""   // Erslicese lslicest element (write zero vslicelue).
-	slice = slice[:len(slice)-1]   // Truncslicete slice.
+func (this *Deck) removeCardAtIndex(index int) Card {
+	this.mux.Lock()
+	card := this.cards[index]
+	this.print("Removing card at index", index, card)
+	if index == 0 {
+		this.cards = this.cards[1:]
+	} else {
+		tmp1 := make([]Card, index-1)
+		tmp2 := make([]Card, len(this.cards)-index)
+
+		copy(tmp1, this.cards[:index])
+		copy(tmp2, this.cards[index:])
+		this.cards = append(tmp1, tmp2...)
+	}
+	this.mux.Unlock()
+	return card
+}
+
+func (this *Deck) removeRandomCard() Card {
+	index := rand.Intn(len(this.cards))
+	card := this.cards[index]
+	this.print("Removed random card", card)
+	this.removeCardAtIndex(index)
+
+	return card
+}
+
+func (this *Deck) print(s ...interface{}) {
+	fmt.Println(this.name, s)
 }
 
 type Hand struct {
@@ -182,8 +187,12 @@ type Hand struct {
 }
 
 func (this *Hand) hasCard(val string) bool {
-	values := this.cards[val]
-	return len(values) > 0
+	for _, c := range this.cards {
+		if c.value == val {
+			return true
+		}
+	}
+	return false
 }
 
 func (this *Hand) addCard(card Card) {
