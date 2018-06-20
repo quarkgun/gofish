@@ -6,6 +6,7 @@ import (
 	"time"
 	"strings"
 	"sync"
+	"os"
 )
 
 var SUITES = [4]string{"Hearts", "Spades", "Diamonds", "Clubs"}
@@ -16,6 +17,7 @@ var playerScore, cpuScore int = 0, 0
 var deck Deck
 
 func main() {
+
 	rand.Seed(time.Now().UTC().UnixNano())
 	fmt.Println("Go Fish!")
 
@@ -35,7 +37,7 @@ func main() {
 		fmt.Printf("Your Hand: %v\n", playerHand.size())
 		fmt.Println(playerHand)
 		if playerTurn {
-			fmt.Print("Choose a card: ")
+			fmt.Print("\n\nChoose a card: ")
 			fmt.Scanln(&input)
 
 			if strings.EqualFold(input, "quit") {
@@ -58,24 +60,32 @@ func main() {
 			}
 
 		} else {
-			fmt.Println("CPU turn...")
+			fmt.Println("\n\nCPU turn...")
 			val := cpuHand.randomCard().value
 			fmt.Printf("Do you have a %v?\n", val)
 			time.Sleep(time.Second * 1)
 
 			if playerHand.hasCard(val) {
 				fmt.Println("Yep!")
-				playerHand.removeAllCardsWithValue(input)
-				cpuHand.removeAllCardsWithValue(input)
+				playerHand.removeAllCardsWithValue(val)
+				cpuHand.removeAllCardsWithValue(val)
 				cpuScore++
 			} else {
 				fmt.Println("Go Fish!")
 				playerTurn = true
 				cpuHand.add(deck.take())
 			}
+			time.Sleep(time.Second * 2)
 		}
 	}
 
+}
+func test() {
+	deck := *NewDeck("testDeck")
+	fmt.Println(deck)
+	deck.removeCardAtIndex(2)
+	fmt.Println(deck)
+	os.Exit(0)
 }
 
 func deal() {
@@ -139,13 +149,14 @@ func (this *Deck) randomCard() Card {
 }
 
 func (this *Deck) removeAllCardsWithValue(value string) {
-	count := 0
-	for i := 0; i < len(this.cards); i++ {
+	count, l := 0, len(this.cards)
+	for i := 0; i < l; i++ {
 		c := this.cards[i]
 		if c.value == value {
 			this.removeCardAtIndex(i)
 			count++
 		}
+		l = len(this.cards)
 	}
 	this.print("Removed ", count, "cards with value", value)
 
@@ -158,11 +169,11 @@ func (this *Deck) removeCardAtIndex(index int) Card {
 	if index == 0 {
 		this.cards = this.cards[1:]
 	} else {
-		tmp1 := make([]Card, index-1)
+		tmp1 := make([]Card, index)
 		tmp2 := make([]Card, len(this.cards)-index)
 
 		copy(tmp1, this.cards[:index])
-		copy(tmp2, this.cards[index:])
+		copy(tmp2, this.cards[index+1:])
 		this.cards = append(tmp1, tmp2...)
 	}
 	this.mux.Unlock()
