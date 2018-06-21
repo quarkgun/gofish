@@ -13,7 +13,7 @@ var SUITES = [4]string{"Hearts", "Spades", "Diamonds", "Clubs"}
 var VALUES = [13]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K", "A"}
 
 var playerHand, cpuHand Hand
-var playerScore, cpuScore int = 0, 0
+var playerScore, cpuScore = 0, 0
 var deck Deck
 
 func main() {
@@ -25,6 +25,9 @@ func main() {
 	playerHand = *NewHand("playerHand")
 	cpuHand = *NewHand("cpuHand")
 
+	deck.shuffle()
+	fmt.Println("Shuffled deck:", deck)
+
 	fmt.Println("Dealing...")
 	deal()
 
@@ -33,10 +36,13 @@ func main() {
 	var input string
 
 	for !quit {
+		checkDeck()
 		fmt.Printf("Scores: Player[%v] CPU[%v]\n", playerScore, cpuScore)
 		fmt.Printf("Your Hand: %v\n", playerHand.size())
 		fmt.Println(playerHand)
 		if playerTurn {
+			fmt.Println("Your turn!\n\n")
+			time.Sleep(time.Second * 1)
 			fmt.Print("\n\nChoose a card: ")
 			fmt.Scanln(&input)
 
@@ -48,6 +54,7 @@ func main() {
 				time.Sleep(time.Second * 1)
 				if cpuHand.hasCard(input) {
 					fmt.Println("Yep!")
+					time.Sleep(time.Second * 1)
 					playerHand.removeAllCardsWithValue(input)
 					cpuHand.removeAllCardsWithValue(input)
 					playerScore++
@@ -60,7 +67,9 @@ func main() {
 			}
 
 		} else {
-			fmt.Println("\n\nCPU turn...")
+			fmt.Println("\n\nCPU turn...\n\n")
+			time.Sleep(time.Second * 1)
+
 			val := cpuHand.randomCard().value
 			fmt.Printf("Do you have a %v?\n", val)
 			time.Sleep(time.Second * 1)
@@ -78,8 +87,24 @@ func main() {
 			time.Sleep(time.Second * 2)
 		}
 	}
-
 }
+
+func db(v ...interface{}) {
+	fmt.Println(v)
+}
+
+func dbv(f string, v ...interface{}) {
+	fmt.Printf(f, v...)
+}
+
+func checkDeck() {
+	for i, c := range deck.cards {
+		if c.value == "" {
+			dbv("ERROR: deck(%[1]d) has empty card at index %[2]d\n", len(deck.cards), i)
+		}
+	}
+}
+
 func test() {
 	deck := *NewDeck("testDeck")
 	fmt.Println(deck)
@@ -100,7 +125,9 @@ func (this *Deck) initDeck() {
 
 	for _, s := range SUITES {
 		for _, val := range VALUES {
-			this.cards = append(this.cards, Card{val, s})
+			card := Card{val, s}
+			fmt.Println("Created card", card)
+			this.cards = append(this.cards, card)
 		}
 	}
 }
@@ -169,11 +196,12 @@ func (this *Deck) removeCardAtIndex(index int) Card {
 	if index == 0 {
 		this.cards = this.cards[1:]
 	} else {
-		tmp1 := make([]Card, index)
+		tmp1 := make([]Card, index-1)
 		tmp2 := make([]Card, len(this.cards)-index)
 
 		copy(tmp1, this.cards[:index])
 		copy(tmp2, this.cards[index+1:])
+		this.cards = make([]Card, len(tmp1) + len(tmp2))
 		this.cards = append(tmp1, tmp2...)
 	}
 	this.mux.Unlock()
@@ -181,7 +209,7 @@ func (this *Deck) removeCardAtIndex(index int) Card {
 }
 
 func (this *Deck) removeRandomCard() Card {
-	index := rand.Intn(len(this.cards))
+	index := rand.Intn(len(this.cards)-1)
 	card := this.cards[index]
 	this.print("Removed random card", card)
 	this.removeCardAtIndex(index)
@@ -191,6 +219,13 @@ func (this *Deck) removeRandomCard() Card {
 
 func (this *Deck) print(s ...interface{}) {
 	fmt.Println(this.name, s)
+}
+
+func (this *Deck) shuffle() {
+	cards := this.cards
+	rand.Shuffle(len(cards), func(i, j int) {
+		cards[i], cards[j] = cards[j], cards[i]
+	})
 }
 
 type Hand struct {
