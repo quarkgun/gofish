@@ -6,7 +6,6 @@ import (
 	"time"
 	"strings"
 	"sync"
-	"os"
 )
 
 var SUITES = [4]string{"Hearts", "Spades", "Diamonds", "Clubs"}
@@ -105,14 +104,6 @@ func checkDeck() {
 	}
 }
 
-func test() {
-	deck := *NewDeck("testDeck")
-	fmt.Println(deck)
-	deck.removeCardAtIndex(2)
-	fmt.Println(deck)
-	os.Exit(0)
-}
-
 func deal() {
 	for i := 0; i < 5; i++ {
 		playerHand.addCard(deck.take())
@@ -126,7 +117,6 @@ func (this *Deck) initDeck() {
 	for _, s := range SUITES {
 		for _, val := range VALUES {
 			card := Card{val, s}
-			fmt.Println("Created card", card)
 			this.cards = append(this.cards, card)
 		}
 	}
@@ -163,7 +153,6 @@ func (this *Deck) take() Card {
 }
 
 func (this *Deck) add(card Card) {
-	this.print("Adding card", card)
 	this.cards = append(this.cards, card)
 }
 
@@ -192,26 +181,14 @@ func (this *Deck) removeAllCardsWithValue(value string) {
 func (this *Deck) removeCardAtIndex(index int) Card {
 	this.mux.Lock()
 	card := this.cards[index]
-	this.print("Removing card at index", index, card)
-	if index == 0 {
-		this.cards = this.cards[1:]
-	} else {
-		tmp1 := make([]Card, index-1)
-		tmp2 := make([]Card, len(this.cards)-index)
-
-		copy(tmp1, this.cards[:index])
-		copy(tmp2, this.cards[index+1:])
-		this.cards = make([]Card, len(tmp1) + len(tmp2))
-		this.cards = append(tmp1, tmp2...)
-	}
+	this.cards = append(this.cards[:index], this.cards[index+1:]...)
 	this.mux.Unlock()
 	return card
 }
 
 func (this *Deck) removeRandomCard() Card {
-	index := rand.Intn(len(this.cards)-1)
+	index := rand.Intn(len(this.cards) - 1)
 	card := this.cards[index]
-	this.print("Removed random card", card)
 	this.removeCardAtIndex(index)
 
 	return card
