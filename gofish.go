@@ -25,7 +25,6 @@ func main() {
 	cpuHand = *NewHand("cpuHand")
 
 	deck.shuffle()
-	fmt.Println("Shuffled deck:", deck)
 
 	fmt.Println("Dealing...")
 	deal()
@@ -40,7 +39,7 @@ func main() {
 		fmt.Printf("Your Hand: %v\n", playerHand.size())
 		fmt.Println(playerHand)
 		if playerTurn {
-			fmt.Println("Your turn!\n\n")
+			fmt.Println("Your turn!")
 			time.Sleep(time.Second * 1)
 			fmt.Print("\n\nChoose a card: ")
 			fmt.Scanln(&input)
@@ -60,36 +59,37 @@ func main() {
 
 				} else {
 					fmt.Println("Go Fish!")
+					time.Sleep(time.Second * 1)
 					playerTurn = false
 					playerHand.add(deck.take())
 				}
 			}
 
 		} else {
-			fmt.Println("\n\nCPU turn...\n\n")
 			time.Sleep(time.Second * 1)
+			fmt.Println("\n\nCPU turn:")
 
 			val := cpuHand.randomCard().value
 			fmt.Printf("Do you have a %v?\n", val)
-			time.Sleep(time.Second * 1)
 
 			if playerHand.hasCard(val) {
 				fmt.Println("Yep!")
+				time.Sleep(time.Second * 1)
 				playerHand.removeAllCardsWithValue(val)
 				cpuHand.removeAllCardsWithValue(val)
 				cpuScore++
 			} else {
 				fmt.Println("Go Fish!")
+				time.Sleep(time.Second * 1)
 				playerTurn = true
 				cpuHand.add(deck.take())
 			}
-			time.Sleep(time.Second * 2)
 		}
 	}
 }
 
 func db(v ...interface{}) {
-	fmt.Println(v)
+	fmt.Println(v...)
 }
 
 func dbv(f string, v ...interface{}) {
@@ -148,7 +148,7 @@ func NewDeck(name string) *Deck {
 }
 
 func (this *Deck) take() Card {
-	card := this.removeRandomCard()
+	card := this.removeTopCard()
 	return card
 }
 
@@ -204,6 +204,9 @@ func (this *Deck) shuffle() {
 		cards[i], cards[j] = cards[j], cards[i]
 	})
 }
+func (this *Deck) removeTopCard() Card {
+	return this.removeCardAtIndex(0)
+}
 
 type Hand struct {
 	Deck
@@ -220,17 +223,4 @@ func (this *Hand) hasCard(val string) bool {
 
 func (this *Hand) addCard(card Card) {
 	this.add(card)
-}
-
-func IndexOf(vs []string, t string) int {
-	for i, v := range vs {
-		if v == t {
-			return i
-		}
-	}
-	return -1
-}
-
-func Contains(vs []string, t string) bool {
-	return IndexOf(vs, t) >= 0
 }
