@@ -7,6 +7,7 @@ import (
 )
 
 type Suit int
+type Rank int
 
 const (
 	Hearts   Suit = iota
@@ -15,32 +16,53 @@ const (
 	Clubs
 )
 
-type Rank struct {
-	value uint8
-	name  string
-	short string
-}
+const (
+	Ace   Rank = iota
+	Two
+	Three
+	Four
+	Five
+	Six
+	Seven
+	Eight
+	Nine
+	Ten
+	Jack
+	Queen
+	King
+)
 
-var Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King =
-	Rank{1, "Ace", "A"},
-	Rank{2, "Two", "2"},
-	Rank{3, "Three", "3"},
-	Rank{4, "Four", "4"},
-	Rank{5, "Five", "5"},
-	Rank{6, "Six", "6"},
-	Rank{7, "Seven", "7"},
-	Rank{8, "Eight", "8"},
-	Rank{9, "Nine", "9"},
-	Rank{10, "Ten", "10"},
-	Rank{11, "Jack", "J"},
-	Rank{12, "Queen", "Q"},
-	Rank{13, "King", "K"}
+func RankFromString(s string) Rank {
+	switch s {
+	case "Ace", "A":
+		return Ace
+	case "Two","2":
+		return Two
+	case "Three","3":
+		return Three
+	case "Four","4":
+		return Four
+	case "Five","5":
+		return Five
+	case "Six","6":
+		return Six
+	case "Seven","7":
+		return Seven
+	case "Eight","8":
+		return Eight
+	case "Nine","9":
+		return Nine
+	case "Ten","10":
+		return Ten
+	case "Jack","J":
+		return Jack
+	case "Queen","Q":
+		return Queen
+	case "King","K":
+		return King
+	}
 
-var Ranks = [13]Rank {
-	Ace,Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten,Jack,Queen,King }
-
-func FromString(s string) Rank {
-
+	return -1
 }
 
 type Card struct {
@@ -149,8 +171,8 @@ func (this *Hand) AddCard(card Card) {
 func (this *Deck) initDeck() {
 	this.Cards = nil
 
-	for _, suit := range Suits {
-		for _, rank := range Ranks {
+	for suit := Hearts; suit <= Clubs; suit++ {
+		for rank := Ace; rank <= King; rank++ {
 			card := Card{Rank: rank, Suit: suit}
 			this.Cards = append(this.Cards, card)
 		}

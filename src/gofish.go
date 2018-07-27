@@ -45,13 +45,20 @@ func main() {
 				quit = true
 				break
 			} else {
+
+				rank := RankFromString(input)
+				if rank < Ace || rank > King {
+					continue
+				}
+
 				fmt.Printf("Do you have a %v?\n", input)
 				time.Sleep(time.Second * 1)
-				if cpuHand.HasCardWithValue(input) {
+
+				if cpuHand.HasCardWithValue(rank) {
 					fmt.Println("Yep!")
 					time.Sleep(time.Second * 1)
-					playerHand.RemoveAllCardsWithValue(input)
-					cpuHand.RemoveAllCardsWithValue(input)
+					playerHand.RemoveAllCardsWithValue(rank)
+					cpuHand.RemoveAllCardsWithValue(rank)
 					playerScore++
 
 				} else {
