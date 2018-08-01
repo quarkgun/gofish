@@ -5,21 +5,21 @@ import (
 	"math/rand"
 	"time"
 	"strings"
-	. "cards"
+	"cards"
 )
 
-var playerHand, cpuHand Hand
+var playerHand, cpuHand cards.Hand
 var playerScore, cpuScore = 0, 0
-var deck Deck
+var deck cards.Deck
 
 func main() {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 	fmt.Println("Go Fish!")
 
-	deck = *NewDeck("deck")
-	playerHand = *NewHand("playerHand")
-	cpuHand = *NewHand("cpuHand")
+	deck = *cards.NewDeck("deck")
+	playerHand = *cards.NewHand("playerHand")
+	cpuHand = *cards.NewHand("cpuHand")
 
 	deck.Shuffle()
 
@@ -31,7 +31,6 @@ func main() {
 	var input string
 
 	for !quit {
-		checkDeck()
 		fmt.Printf("Scores: Player[%v] CPU[%v]\n", playerScore, cpuScore)
 		fmt.Printf("Your Hand: %v\n", playerHand.Size())
 		fmt.Println(playerHand)
@@ -46,8 +45,8 @@ func main() {
 				break
 			} else {
 
-				rank := RankFromString(input)
-				if rank < Ace || rank > King {
+				rank := cards.RankFromString(input)
+				if rank < cards.Ace || rank > cards.King {
 					continue
 				}
 
@@ -92,21 +91,6 @@ func main() {
 	}
 }
 
-func db(v ...interface{}) {
-	fmt.Println(v...)
-}
-
-func dbv(f string, v ...interface{}) {
-	fmt.Printf(f, v...)
-}
-
-func checkDeck() {
-	for i, c := range deck.Cards {
-		if c.Rank < Ace || c.Rank > King {
-			dbv("ERROR: deck(%[1]d) has empty card at index %[2]d\n", len(deck.Cards), i)
-		}
-	}
-}
 
 func deal() {
 	for i := 0; i < 5; i++ {

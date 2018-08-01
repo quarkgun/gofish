@@ -181,3 +181,20 @@ func (this *Deck) initDeck() {
 		}
 	}
 }
+
+func Check(deck *Deck) {
+	for i, c := range deck.Cards {
+		if c.Rank < Ace || c.Rank > King {
+			dbv("ERROR: deck(%[1]d) has empty card at index %[2]d\n", len(deck.Cards), i)
+		}
+	}
+}
+
+func db(v ...interface{}) {
+	fmt.Println(v...)
+}
+
+func dbv(f string, v ...interface{}) {
+	fmt.Printf(f, v...)
+}
+
