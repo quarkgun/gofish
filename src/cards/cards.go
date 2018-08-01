@@ -6,7 +6,10 @@ import (
 	"sync"
 )
 
+//go:generate stringer -type=Suit
 type Suit int
+
+//go:generate stringer -type=Rank
 type Rank int
 
 const (
